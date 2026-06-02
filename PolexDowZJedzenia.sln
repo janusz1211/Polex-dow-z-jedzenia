@@ -1,21 +1,21 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.7.33712.352
+# Visual Studio Version 18
+VisualStudioVersion = 18.6.11819.183 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolexDowZJedzenia", "PolexDowZJedzenia\PolexDowZJedzenia.csproj", "{E5A44C1B-8F1B-4B01-B53D-0CC9B0BF0BAF}"
 EndProject
 Global
-    GlobalSection(SolutionConfigurationPlatforms) = preSolution
-        Debug|Any CPU = Debug|Any CPU
-        Release|Any CPU = Release|Any CPU
-    EndGlobalSection
-    GlobalSection(ProjectConfigurationPlatforms) = postSolution
-        {E5A44C1B-8F1B-4B01-B53D-0CC9B0BF0BAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-        {E5A44C1B-8F1B-4B01-B53D-0CC9B0BF0BAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-        {E5A44C1B-8F1B-4B01-B53D-0CC9B0BF0BAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-        {E5A44C1B-8F1B-4B01-B53D-0CC9B0BF0BAF}.Release|Any CPU.Build.0 = Release|Any CPU
-    EndGlobalSection
-    GlobalSection(SolutionProperties) = preSolution
-        HideSolutionNode = FALSE
-    EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E5A44C1B-8F1B-4B01-B53D-0CC9B0BF0BAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5A44C1B-8F1B-4B01-B53D-0CC9B0BF0BAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5A44C1B-8F1B-4B01-B53D-0CC9B0BF0BAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5A44C1B-8F1B-4B01-B53D-0CC9B0BF0BAF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
 EndGlobal
