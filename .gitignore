@@ -1,0 +1,28 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Rider
+.idea/
+
+# Auto-generated files
+*.log
+*.vspscc
+*.vssscc
+
+# NuGet
+*.nupkg
+packages/
+
+# Windows image file caches
+Thumbs.db
+
+# Visual Studio Code
+.vscode/
