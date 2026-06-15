@@ -29,11 +29,6 @@ public class Produkt
         Cena = cena;
         Kategoria = kategoria;
     }
-
-    public decimal PobierzCene()
-    {
-        return Cena;
-    }
 }
 
 public class PozycjaZamowienia
@@ -53,51 +48,58 @@ public class PozycjaZamowienia
     }
 }
 
-public interface IRegulaCenowa
+public class RegulaCenowa
 {
-    decimal ObliczRabaty(List<PozycjaZamowienia> pozycje);
-}
+    public decimal ProcentZnizki { get; set; } = 10;
 
-public class PromocjaProcentowa : IRegulaCenowa
-{
-    private decimal procentRabatu;
-
-    public PromocjaProcentowa(decimal procentRabatu)
+    public decimal ZastosujPromocjeProcentowa(decimal cena)
     {
-        this.procentRabatu = procentRabatu;
+        return cena - (cena * ProcentZnizki / 100);
     }
 
-    public decimal ObliczRabaty(List<PozycjaZamowienia> pozycje)
+    public decimal ZastosujZestawLunchowy(
+        List<PozycjaZamowienia> pozycje,
+        decimal cena)
     {
-        decimal suma = pozycje.Sum(p => p.ObliczWartosc());
-        return suma * (procentRabatu / 100m);
-    }
-}
+        bool maDanie = pozycje.Any(
+            p => p.Produkt.Kategoria ==
+            KategoriaProduktu.DanieGlowne);
 
-public class ZestawLunchowy : IRegulaCenowa
-{
-    public decimal ObliczRabaty(List<PozycjaZamowienia> pozycje)
-    {
-        // Tutaj później można zaimplementować logikę zestawu
-        return 0m;
+        bool maNapoj = pozycje.Any(
+            p => p.Produkt.Kategoria ==
+            KategoriaProduktu.Napoj);
+
+        if (maDanie && maNapoj)
+        {
+            cena -= 5;
+        }
+
+        return cena;
     }
 }
 
 public class KalkulatorCeny
 {
-    private IRegulaCenowa regula;
+    private RegulaCenowa regula;
 
-    public KalkulatorCeny(IRegulaCenowa regula)
+    public KalkulatorCeny(RegulaCenowa regula)
     {
         this.regula = regula;
     }
 
-    public decimal ObliczNaleznosc(List<PozycjaZamowienia> pozycje)
+    public decimal ObliczNaleznosc(
+        List<PozycjaZamowienia> pozycje)
     {
-        decimal suma = pozycje.Sum(p => p.ObliczWartosc());
-        decimal rabat = regula.ObliczRabaty(pozycje);
+        decimal suma = pozycje.Sum(
+            p => p.ObliczWartosc());
 
-        return suma - rabat;
+        suma = regula.ZastosujPromocjeProcentowa(suma);
+
+        suma = regula.ZastosujZestawLunchowy(
+            pozycje,
+            suma);
+
+        return suma;
     }
 }
 
@@ -113,19 +115,20 @@ public class Zamowienie
         Status = StatusZamowienia.Przyjete;
     }
 
-    public void DodajPozycje(PozycjaZamowienia pozycja)
+    public void DodajProdukt(Produkt produkt, int ilosc)
     {
-        pozycje.Add(pozycja);
+        pozycje.Add(
+            new PozycjaZamowienia(produkt, ilosc));
     }
 
-    public void UsunPozycje(PozycjaZamowienia pozycja)
+    public void UsunProdukt(PozycjaZamowienia pozycja)
     {
         pozycje.Remove(pozycja);
     }
 
-    public void ZmienStatus(StatusZamowienia nowyStatus)
+    public void ZmienStatus(StatusZamowienia status)
     {
-        Status = nowyStatus;
+        Status = status;
     }
 
     public List<PozycjaZamowienia> PobierzPozycje()
@@ -133,7 +136,8 @@ public class Zamowienie
         return pozycje;
     }
 
-    public decimal ObliczNaleznosc(KalkulatorCeny kalkulator)
+    public decimal ObliczNaleznosc(
+        KalkulatorCeny kalkulator)
     {
         return kalkulator.ObliczNaleznosc(pozycje);
     }
@@ -143,36 +147,34 @@ class Program
 {
     static void Main()
     {
-        Produkt burger = new Produkt(
-            "Burger",
-            25m,
-            KategoriaProduktu.DanieGlowne);
+        Produkt burger =
+            new Produkt(
+                "Burger",
+                25,
+                KategoriaProduktu.DanieGlowne);
 
-        Produkt cola = new Produkt(
-            "Cola",
-            8m,
-            KategoriaProduktu.Napoj);
+        Produkt cola =
+            new Produkt(
+                "Cola",
+                8,
+                KategoriaProduktu.Napoj);
 
-        Zamowienie zamowienie = new Zamowienie();
+        Zamowienie zamowienie =
+            new Zamowienie();
 
-        zamowienie.DodajPozycje(
-            new PozycjaZamowienia(burger, 2));
+        zamowienie.DodajProdukt(burger, 2);
+        zamowienie.DodajProdukt(cola, 1);
 
-        zamowienie.DodajPozycje(
-            new PozycjaZamowienia(cola, 1));
-
-        IRegulaCenowa promocja =
-            new PromocjaProcentowa(10);
+        RegulaCenowa regula =
+            new RegulaCenowa();
 
         KalkulatorCeny kalkulator =
-            new KalkulatorCeny(promocja);
+            new KalkulatorCeny(regula);
 
-        decimal naleznosc =
-            zamowienie.ObliczNaleznosc(kalkulator);
+        Console.WriteLine(
+            $"Status: {zamowienie.Status}");
 
-        Console.WriteLine("Stan zamówienia: " + zamowienie.Status);
-        Console.WriteLine("Do zapłaty: " + naleznosc + " zł");
-
-        Console.ReadKey();
+        Console.WriteLine(
+            $"Do zapłaty: {zamowienie.ObliczNaleznosc(kalkulator)} zł");
     }
 }
