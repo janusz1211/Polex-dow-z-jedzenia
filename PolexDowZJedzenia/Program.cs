@@ -26,11 +26,14 @@ public class Produkt
     public decimal Cena { get; set; }
     public KategoriaProduktu Kategoria { get; set; }
 
-    public Produkt(string nazwa, decimal cena, KategoriaProduktu kategoria)
+    public decimal ProcentPrzeceny { get; set; }
+
+    public Produkt(string nazwa, decimal cena, KategoriaProduktu kategoria, decimal procentPrzeceny = 0)
     {
         Nazwa = nazwa;
         Cena = cena;
         Kategoria = kategoria;
+        ProcentPrzeceny = procentPrzeceny;
     }
 }
 
@@ -44,7 +47,11 @@ public class PozycjaZamowienia
         Produkt = produkt;
         Ilosc = ilosc;
     }
-
+    public decimal ObliczCenePoPrzecenie() {
+        if (Produkt.ProcentPrzeceny > 0)
+            return Produkt.Cena - (Produkt.Cena * Produkt.ProcentPrzeceny / 100);
+        return Produkt.Cena;
+    }
     public decimal ObliczWartosc()
     {
         return Produkt.Cena * Ilosc;
@@ -53,28 +60,33 @@ public class PozycjaZamowienia
 
 public class RegulaCenowa
 {
-    public decimal ProcentZnizki { get; set; } = 10;
+    public decimal ProcentZnizki { get; set; } = 15;
+    public bool ZastosowanoZnizkeProduktowa {get; private set;} = false;
 
-    public decimal ZastosujPromocjeProcentowa(decimal cena)
+    public decimal ZastosujZnizki(List<PozycjaZamowienia> pozycje, decimal cena)
     {
-        return cena - (cena * ProcentZnizki / 100);
-    }
+        bool maDanie = pozycje.Any(p => p.Produkt.Kategoria == KategoriaProduktu.DanieGlowne);
+        bool maNapoj = pozycje.Any(p => p.Produkt.Kategoria == KategoriaProduktu.Napoj);
+        bool maDeser = pozycje.Any(p => p.Produkt.Kategoria == KategoriaProduktu.Deser);
 
-    public decimal ZastosujZestawLunchowy(
-        List<PozycjaZamowienia> pozycje,
-        decimal cena)
-    {
-        bool maDanie = pozycje.Any(
-            p => p.Produkt.Kategoria ==
-            KategoriaProduktu.DanieGlowne);
+        decimal znizkaZestawowa = 0;
+        if (maDanie && maNapoj && maDeser)
+            znizkaZestawowa = cena * ProcentZnizki / 100;
+        else if (maDanie && maNapoj)
+            znizkaZestawowa = 5;
 
-        bool maNapoj = pozycje.Any(
-            p => p.Produkt.Kategoria ==
-            KategoriaProduktu.Napoj);
+        decimal maxPrzecena = pozycje.Max(p => p.Produkt.ProcentPrzeceny);
+        decimal znizkaProduktowa = cena * maxPrzecena / 100;
 
-        if (maDanie && maNapoj)
+        if (znizkaProduktowa > znizkaZestawowa)
         {
-            cena -= 5;
+            ZastosowanoZnizkeProduktowa = true;
+            cena -= znizkaProduktowa;
+        }
+        else
+        {
+            ZastosowanoZnizkeProduktowa = false;
+            cena -= znizkaZestawowa;
         }
 
         return cena;
@@ -89,18 +101,17 @@ public class KalkulatorCeny
     {
         this.regula = regula;
     }
+    public bool CzyZastosowanoZnizkeProduktowa()
+    {
+        return regula.ZastosowanoZnizkeProduktowa;
+    }
 
     public decimal ObliczNaleznosc(
         List<PozycjaZamowienia> pozycje)
     {
         decimal suma = pozycje.Sum(
             p => p.ObliczWartosc());
-
-        suma = regula.ZastosujPromocjeProcentowa(suma);
-
-        suma = regula.ZastosujZestawLunchowy(
-            pozycje,
-            suma);
+        suma = regula.ZastosujZnizki(pozycje, suma);
 
         return suma;
     }
@@ -145,14 +156,18 @@ public class ZamowienieNaMiejscu : Zamowienie
 
     public override string GenerujPodsumowanie(KalkulatorCeny kalkulator)
     {
+        decimal naleznosc = ObliczNaleznosc(kalkulator);
         string podsumowanie = $"=== ZAMÓWIENIE NA MIEJSCU (Data: {DataZlozenia}) ===\n";
         podsumowanie += $"Stolik numer: {NumerStolika}\n";
         podsumowanie += "Pozycje:\n";
         foreach (var poz in PobierzPozycje())
         {
-            podsumowanie += $"- {poz.Produkt.Nazwa} x{poz.Ilosc} ({poz.ObliczWartosc()} zł)\n";
+            string przecenaInfo = (poz.Produkt.ProcentPrzeceny > 0 && kalkulator.CzyZastosowanoZnizkeProduktowa())
+            ? $", przecena {poz.Produkt.ProcentPrzeceny}%"
+            : "";
+            podsumowanie += $"- {poz.Produkt.Nazwa} x{poz.Ilosc} ({poz.ObliczWartosc():F2} zł){przecenaInfo}\n";
         }
-        podsumowanie += $"Do zapłaty: {ObliczNaleznosc(kalkulator)} zł\n";
+        podsumowanie += $"Do zapłaty: {naleznosc:F2} zł\n";
         podsumowanie += "--------------------------------------------------\n";
         return podsumowanie;
     }
@@ -176,15 +191,19 @@ public class ZamowienieWDowozie : Zamowienie
 
     public override string GenerujPodsumowanie(KalkulatorCeny kalkulator)
     {
+        decimal naleznosc = ObliczNaleznosc(kalkulator);
         string podsumowanie = $"=== ZAMÓWIENIE Z DOWOZEM (Data: {DataZlozenia}) ===\n";
         podsumowanie += $"Adres dostawy: {AdresDostawy}\n";
         podsumowanie += "Pozycje:\n";
         foreach (var poz in PobierzPozycje())
         {
-            podsumowanie += $"- {poz.Produkt.Nazwa} x{poz.Ilosc} ({poz.ObliczWartosc()} zł)\n";
+            string przecenaInfo = (poz.Produkt.ProcentPrzeceny > 0 && kalkulator.CzyZastosowanoZnizkeProduktowa())
+            ? $", przecena {poz.Produkt.ProcentPrzeceny}%"
+            : "";
+            podsumowanie += $"- {poz.Produkt.Nazwa} x{poz.Ilosc} ({poz.ObliczWartosc()} zł){przecenaInfo}\n";
         }
-        podsumowanie += $"Koszt dostawy: {KosztDostawy} zł\n";
-        podsumowanie += $"Do zapłaty (razem): {ObliczNaleznosc(kalkulator)} zł\n";
+        podsumowanie += $"Koszt dostawy: {KosztDostawy:F2} zł\n";
+        podsumowanie += $"Do zapłaty (razem): {naleznosc:F2} zł\n";
         podsumowanie += "--------------------------------------------------\n";
         return podsumowanie;
     }
@@ -202,9 +221,9 @@ class Program
 
             File.WriteAllLines(plikMenu, new string[]
             {
-                "Burger;25.50;DanieGlowne",
-                "Cola;6.00;Napoj",
-                "Sernik;12.00;Deser"
+                "Burger;25.50;DanieGlowne;0",
+                "Cola;6.00;Napoj;10",
+                "Sernik;12.00;Deser;0"
             });
         }
 
@@ -213,7 +232,7 @@ class Program
             foreach (string linia in File.ReadAllLines(plikMenu))
             {
                 var dane = linia.Split(';');
-                if (dane.Length == 3)
+                if (dane.Length == 4)
                 {
                     string nazwa = dane[0];
                     decimal cena;
@@ -226,7 +245,13 @@ class Program
                         continue;
                     }
                     KategoriaProduktu kat = (KategoriaProduktu)Enum.Parse(typeof(KategoriaProduktu), dane[2]);
-                    menu.Add(new Produkt(nazwa, cena, kat));
+                    
+
+                    decimal przecena = 0;
+                    if (dane.Length == 4)
+                        decimal.TryParse(dane[3], System.Globalization.NumberStyles.Number,
+                            System.Globalization.CultureInfo.CurrentCulture, out przecena);
+                menu.Add(new Produkt(nazwa, cena, kat, przecena));
                 }
             }
 
@@ -266,7 +291,10 @@ class Program
                 Console.WriteLine("--- DODAJ PRODUKTY (0 aby zakończyć) ---");
                 for (int i = 0; i < menu.Count; i++)
                 {
-                    Console.WriteLine($"{i + 1}. {menu[i].Nazwa} - {menu[i].Cena} zł");
+                    string przecenaInfo = menu[i].ProcentPrzeceny > 0
+                        ? $" ({menu[i].ProcentPrzeceny}% przeceny)"
+                        : "";
+                    Console.WriteLine($"{i + 1}. {menu[i].Nazwa} - {menu[i].Cena} zł{przecenaInfo}");
                 }
 
                 Console.Write("Wybór: ");
