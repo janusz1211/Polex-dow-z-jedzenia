@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 public enum KategoriaProduktu
@@ -19,10 +20,10 @@ public enum StatusZamowienia
 
 public class Produkt
 {
-    public string Nazwa { get; set; }
-    public decimal Cena { get; set; }
-    public KategoriaProduktu Kategoria { get; set; }
-    public decimal ProcentPrzeceny { get; set; }
+    public string Nazwa { get; init; }
+    public decimal Cena { get; init; }
+    public KategoriaProduktu Kategoria { get; init; }
+    public decimal ProcentPrzeceny { get; init; }
 
     public Produkt(string nazwa, decimal cena, KategoriaProduktu kat, decimal przecena)
     {
@@ -45,8 +46,8 @@ public class Produkt
 
 public class PozycjaZamowienia
 {
-    public Produkt Produkt { get; set; }
-    public int Ilosc { get; set; }
+    public Produkt Produkt { get; init; }
+    public int Ilosc { get; init; }
 
     public PozycjaZamowienia(Produkt p, int i)
     {
@@ -64,70 +65,81 @@ public class PozycjaZamowienia
         return Produkt.CenaPoPrzecenie() * Ilosc;
     }
 }
+public record WynikObliczen(decimal FinalnaCena, bool UzytoZestawu);
 
 public class RegulaCenowa
 {
-    public bool UzytoZestawu { get; private set; }
-
-    public decimal Oblicz(List<PozycjaZamowienia> p, decimal suma)
+    public WynikObliczen Oblicz(IReadOnlyList<PozycjaZamowienia> p, decimal suma)
     {
-        UzytoZestawu = false;
-
         bool danie = p.Any(x => x.Produkt.Kategoria == KategoriaProduktu.DanieGlowne);
         bool napoj = p.Any(x => x.Produkt.Kategoria == KategoriaProduktu.Napoj);
         bool deser = p.Any(x => x.Produkt.Kategoria == KategoriaProduktu.Deser);
 
         decimal znizkaZestaw = 0;
+        bool uzytoZestawu = false;
 
         if (danie && napoj && deser)
         {
             znizkaZestaw = suma * 0.10m;
-            UzytoZestawu = true;
+            uzytoZestawu = true;
         }
 
         decimal znizkaProduktowa = p.Sum(x => x.Produkt.Oszczednosc() * x.Ilosc);
+        decimal ostatecznaCena = suma - Math.Max(znizkaZestaw, znizkaProduktowa);
 
-        return suma - Math.Max(znizkaZestaw, znizkaProduktowa);
+        return new WynikObliczen(ostatecznaCena, uzytoZestawu);
     }
 }
 
 public class KalkulatorCeny
 {
-    private RegulaCenowa r;
+    private readonly RegulaCenowa r;
+    private bool czyZestaw;
 
     public KalkulatorCeny(RegulaCenowa r)
     {
         this.r = r;
     }
 
-    public decimal Oblicz(List<PozycjaZamowienia> p)
+    public decimal Oblicz(IReadOnlyList<PozycjaZamowienia> p)
     {
         decimal suma = p.Sum(x => x.WartoscBezRabatow());
-        return r.Oblicz(p, suma);
+        var wynik = r.Oblicz(p, suma);
+
+        czyZestaw = wynik.UzytoZestawu;
+        return wynik.FinalnaCena;
     }
 
-    public bool CzyZestaw() => r.UzytoZestawu;
+    public bool CzyZestaw() => czyZestaw;
 }
 
 public abstract class Zamowienie
 {
-    private List<PozycjaZamowienia> pozycje = new List<PozycjaZamowienia>();
+    private readonly List<PozycjaZamowienia> pozycje = new List<PozycjaZamowienia>();
+
+    private static int licznik = 1;
+
+    public int Id { get; }
 
     public StatusZamowienia Status { get; private set; }
-    public DateTime Data { get; private set; }
+    public DateTime Data { get; init; }
 
-    public Zamowienie()
+    protected Zamowienie()
     {
         Status = StatusZamowienia.Przyjete;
         Data = DateTime.Now;
+        Id = licznik++;
     }
 
     public void Dodaj(Produkt p, int i)
     {
-        pozycje.Add(new PozycjaZamowienia(p, i));
+        if (p != null && i > 0)
+        {
+            pozycje.Add(new PozycjaZamowienia(p, i));
+        }
     }
 
-    public List<PozycjaZamowienia> Pobierz() => pozycje;
+    public IReadOnlyList<PozycjaZamowienia> Pobierz() => pozycje.AsReadOnly();
 
     public virtual decimal Suma(KalkulatorCeny k)
     {
@@ -149,7 +161,7 @@ public abstract class Zamowienie
 
 public class ZamowienieNaMiejscu : Zamowienie
 {
-    public int Stolik { get; set; }
+    public int Stolik { get; init; }
 
     public ZamowienieNaMiejscu(int s)
     {
@@ -169,8 +181,8 @@ public class ZamowienieNaMiejscu : Zamowienie
 
 public class ZamowienieWDowozie : Zamowienie
 {
-    public string Adres { get; set; }
-    public decimal Dostawa = 12.5m;
+    public string Adres { get; init; }
+    public decimal Dostawa { get; } = 12.5m; 
 
     public ZamowienieWDowozie(string a)
     {
@@ -189,6 +201,6 @@ public class ZamowienieWDowozie : Zamowienie
 
     public override string Info(KalkulatorCeny k)
     {
-        return $"DOWÓZ\nAdres: {Adres}\nStatus: {Status}\nCzas: {CzasOczekiwania()} min\nSuma: {Suma(k):F2} zł";
+        return $"DOWÓZ\nAdres: {Adres}\nID: {Id}\nData: {Data:yyyy-MM-dd HH:mm}\nStatus: {Status}\nCzas: {CzasOczekiwania()} min\nSuma: {Suma(k):F2} zł";
     }
 }

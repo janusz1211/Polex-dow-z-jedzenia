@@ -151,7 +151,6 @@ class Program
                 if (!int.TryParse(Console.ReadLine(), out int idx) || idx == 0)
                     break;
 
-                // Sprawdzenie, czy indeks mieści się w granicach listy menu
                 if (idx < 1 || idx > menu.Count)
                 {
                     Console.WriteLine("Niepoprawny numer produktu. Naciśnij klawisz...");
@@ -166,7 +165,6 @@ class Program
                     z.Dodaj(menu[idx - 1], ilosc);
             }
 
-            // Wyświetlanie podsumowania po wyjściu z pętli dodawania produktów
             if (z != null && z.Pobierz().Count > 0)
             {
                 z.ZmienStatus(StatusZamowienia.WPrzygotowaniu);
@@ -174,7 +172,7 @@ class Program
                 Console.Clear();
                 Console.WriteLine("=== PODSUMOWANIE ZAMÓWIENIA ===");
                 Console.WriteLine(z.Info(kalk));
-
+                ZapiszDoHistorii(z.Info(kalk));
                 if (kalk.CzyZestaw())
                 {
                     Console.WriteLine("\n[PROMO] Przyznano 10% zniżki na zestaw (Danie + Napój + Deser)!");
@@ -185,7 +183,12 @@ class Program
             }
         }
     }
+    static void ZapiszDoHistorii(string tresc)
+    {
+        string plik = "HistoriaZ.txt";
 
+        File.AppendAllText(plik, tresc + Environment.NewLine + "------------------------" + Environment.NewLine);
+    }
     static int PobierzInt(string msg, int min, int max)
     {
         while (true)
