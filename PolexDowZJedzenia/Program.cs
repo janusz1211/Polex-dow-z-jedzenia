@@ -222,8 +222,37 @@ class Program
             File.WriteAllLines(plikMenu, new string[]
             {
                 "Burger;25.50;DanieGlowne;0",
+                "Pizza Margherita;32.00;DanieGlowne;15",
+                "Makaron Carbonara;29.00;DanieGlowne;0",
+                "Łosoś z Grilla;45.00;DanieGlowne;10",
+                "Kotlet Schabowy;28.50;DanieGlowne;0",
+                "Pierogi z Mięsem;22.00;DanieGlowne;5",
+                "Stek Wolowy;65.00;DanieGlowne;0",
+                "Risotto Borowikowe;34.50;DanieGlowne;10",
+                "Kurczak w Sosie Curry;27.00;DanieGlowne;0",
+                "Placki Ziemniaczane;19.50;DanieGlowne;0",
+                "Dorsz w Panierce;31.00;DanieGlowne;5",
+                "Kebab XXL;40.00;DanieGlowne;5",  
+
                 "Cola;6.00;Napoj;10",
-                "Sernik;12.00;Deser;0"
+                "Lemoniada;9.00;Napoj;0",
+                "Espresso;7.00;Napoj;0",
+                "Kawa Mrożona;10.00;Napoj;0",
+                "Sok Pomarańczowy;8.50;Napoj;0",
+                "Sok Jablkowy;7.50;Napoj;0",
+                "Herbata Czarna;8.00;Napoj;0",
+                "Herbata Zielona;8.00;Napoj;0",
+                "Woda Gazowana;5.00;Napoj;0",
+                "Woda Niegazowana;5.00;Napoj;0",
+                
+                "Sernik;12.00;Deser;0",
+                "Szarlotka;14.50;Deser;20",
+                "Brownie;16.00;Deser;0",
+                "Panna Cotta;13.50;Deser;0",
+                "Tarta Cytrynowa;15.00;Deser;10",
+                "Lody Waniliowe;11.00;Deser;0",
+                "Beza;18.00;Deser;20",
+                "Tiramisu;16.50;Deser;0"
             });
         }
 
@@ -289,12 +318,40 @@ class Program
             {
                 Console.Clear();
                 Console.WriteLine("--- DODAJ PRODUKTY (0 aby zakończyć) ---");
+                Console.WriteLine("/ DANIA GŁÓWNE /");
                 for (int i = 0; i < menu.Count; i++)
                 {
-                    string przecenaInfo = menu[i].ProcentPrzeceny > 0
-                        ? $" ({menu[i].ProcentPrzeceny}% przeceny)"
-                        : "";
-                    Console.WriteLine($"{i + 1}. {menu[i].Nazwa} - {menu[i].Cena} zł{przecenaInfo}");
+                    if (menu[i].Kategoria == KategoriaProduktu.DanieGlowne)
+                    {
+                        string przecenaInfo = menu[i].ProcentPrzeceny > 0
+                            ? $" ({menu[i].ProcentPrzeceny}% przeceny)"
+                            : "";
+                        Console.WriteLine($"{i + 1}. {menu[i].Nazwa} - {menu[i].Cena} zł{przecenaInfo}");
+                    }
+                }
+
+                Console.WriteLine("/ NAPOJE /");
+                for (int i = 0; i < menu.Count; i++)
+                {
+                    if (menu[i].Kategoria == KategoriaProduktu.Napoj)
+                    {
+                        string przecenaInfo = menu[i].ProcentPrzeceny > 0
+                            ? $" ({menu[i].ProcentPrzeceny}% przeceny)"
+                            : "";
+                        Console.WriteLine($"{i + 1}. {menu[i].Nazwa} - {menu[i].Cena} zł{przecenaInfo}");
+                    }
+                }
+
+                Console.WriteLine("/ DESERY /");
+                for (int i = 0; i < menu.Count; i++)
+                {
+                    if (menu[i].Kategoria == KategoriaProduktu.Deser)
+                    {
+                        string przecenaInfo = menu[i].ProcentPrzeceny > 0
+                            ? $" ({menu[i].ProcentPrzeceny}% przeceny)"
+                            : "";
+                        Console.WriteLine($"{i + 1}. {menu[i].Nazwa} - {menu[i].Cena} zł{przecenaInfo}");
+                    }
                 }
 
                 Console.Write("Wybór: ");
