@@ -11,8 +11,10 @@ class Program
 
         if (!File.Exists(plik))
         {
-            File.WriteAllLines(plik, new[]
+            try
             {
+                File.WriteAllLines(plik, new[]
+                {
                 "Burger;25.50;DanieGlowne;0",
                 "Pizza Margherita;32.00;DanieGlowne;15",
                 "Makaron Carbonara;29.00;DanieGlowne;0",
@@ -46,12 +48,19 @@ class Program
                 "Beza;18.00;Deser;20",
                 "Tiramisu;16.50;Deser;0"
             });
+            }
+            catch (Exception ex)
+            {
+                ZapiszBlad(ex);
+                Console.WriteLine("Błąd zapisu pliku menu. Szczegóły zapisano do errors.log");
+            }
         }
-
         List<Produkt> menu = new List<Produkt>();
 
-        foreach (var l in File.ReadAllLines(plik))
+        try
         {
+            foreach (var l in File.ReadAllLines(plik))
+            {
             var d = l.Split(';');
 
             if (d.Length < 4)
@@ -73,6 +82,12 @@ class Program
                 System.Globalization.CultureInfo.InvariantCulture, out decimal przecena);
 
             menu.Add(new Produkt(nazwa, cena, kat, przecena));
+            }
+        }
+        catch (Exception ex)
+        {
+            ZapiszBlad(ex);
+            Console.WriteLine("Błąd odczytu pliku menu. Szczegóły zapisano do errors.log");
         }
 
         var kalk = new KalkulatorCeny(new RegulaCenowa());
@@ -148,8 +163,17 @@ class Program
                 }
 
                 Console.Write("Wybierz produkt (0 aby zakończyć): ");
-                if (!int.TryParse(Console.ReadLine(), out int idx) || idx == 0)
+                string wybor = Console.ReadLine();
+                if (wybor == "0")
                     break;
+
+                if (!int.TryParse(wybor, out int idx))
+                {
+                    Console.WriteLine("Niepoprawny wpis. Wpisz numer produktu lub 0 aby zakończyć.");
+                    Console.WriteLine("Naciśnij klawisz...");
+                    Console.ReadKey();
+                    continue;
+                }
 
                 if (idx < 1 || idx > menu.Count)
                 {
@@ -159,10 +183,16 @@ class Program
                 }
 
                 Console.Write("Ilość: ");
-                int.TryParse(Console.ReadLine(), out int ilosc);
+                string iloscTxt = Console.ReadLine();
+                if (!int.TryParse(iloscTxt, out int ilosc) || ilosc <= 0)
+                {
+                    Console.WriteLine("Niepoprawna ilość. Wpisz dodatnią liczbę.");
+                    Console.WriteLine("Naciśnij klawisz...");
+                    Console.ReadKey();
+                    continue;
+                }
 
-                if (ilosc > 0)
-                    z.Dodaj(menu[idx - 1], ilosc);
+                z.Dodaj(menu[idx - 1], ilosc);
             }
 
             if (z != null && z.Pobierz().Count > 0)
@@ -182,12 +212,27 @@ class Program
                 Console.ReadLine();
             }
         }
+        
     }
     static void ZapiszDoHistorii(string tresc)
     {
         string plik = "HistoriaZ.txt";
 
         File.AppendAllText(plik, tresc + Environment.NewLine + "------------------------" + Environment.NewLine);
+    }
+
+    static void ZapiszBlad(Exception ex)
+    {
+        try
+        {
+            string plik = "errors.log";
+            string tresc = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}--------------------{Environment.NewLine}";
+            File.AppendAllText(plik, tresc);
+        }
+        catch
+        {
+
+        }
     }
     static int PobierzInt(string msg, int min, int max)
     {
