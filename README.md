@@ -1,4 +1,4 @@
-# Polex — system zamówień dla punktu gastronomicznego
+# Polex - system zamówień dla punktu gastronomicznego
 
 Konsolowa aplikacja w C# wspomagająca obsługę zamówień w punkcie gastronomicznym (restauracji, barze szybkiej obsługi).
 
@@ -180,6 +180,6 @@ Po starcie wyświetlane jest menu główne: **1.** zamówienie na miejscu (numer
 
 Dokumentacja i diagram klas UML — wspólnie, cały zespół.
 
-- **Jan Ryszard Mazurkiewicz** — pozostałe elementy (`Zamowienie` i klasy pochodne, `Program`, obsługa plików) oraz ogólny refactoring kodu.
 - **Maciej Pieńkowski** — klasy `PozycjaZamowienia` i `Produkt`.
 - **Igor Stanisław Białobrzeski** — klasy `KalkulatorCeny`, `RegulaCenowa`, `WynikObliczen` (logika rabatowa).
+- **Jan Ryszard Mazurkiewicz** — pozostałe elementy (`Zamowienie` i klasy pochodne, `Program`, obsługa plików) oraz ogólny refactoring kodu.
